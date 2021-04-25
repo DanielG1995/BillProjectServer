@@ -1,4 +1,4 @@
-const { response } = require("express");
+const { response, required } = require("express");
 
 const usuariosGet = (req, res=response) => {
   res.json({
@@ -13,9 +13,11 @@ const usuariosPost = (req, res=response) => {
     body
   });
 };
-const usuariosPut = (req, res=response) => {
+const usuariosPut = (req=required, res=response) => {
+  const {id}=req.params;
   res.json({
-    msg: "put API",
+    msg: "put API-controller",
+    id
   });
 };
 const usuariosDelete = (req, res=response) => {
