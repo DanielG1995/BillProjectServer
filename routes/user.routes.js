@@ -6,12 +6,17 @@ const {
   usuariosDelete,
   usuariosPost,
 } = require("../controllers/users");
-const { esRolValido, emailExiste } = require("../helpers/db-validators");
+const { esRolValido, emailExiste, existeUsuarioId } = require("../helpers/db-validators");
 const { validarCampos } = require("../middlewares/validar-campos");
 
 const router = Router();
 router.get("/", usuariosGet);
-router.put("/:id", usuariosPut);
+router.put("/:id",[
+  check('id','No es un ID valido').isMongoId(),
+  check('id').custom(existeUsuarioId),
+  check('rol').custom(esRolValido),
+  validarCampos
+] ,usuariosPut);
 router.post("/",[
   check('correo','No es valido').isEmail(),
   check('correo').custom(emailExiste),
