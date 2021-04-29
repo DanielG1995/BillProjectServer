@@ -3,12 +3,12 @@ const Usuario = require("../models/usuario");
 const bcrypt = require("bcryptjs");
 const usuariosGet = async (req, res = response) => {
   const { limite = 5, desde = 0 } = req.query;
-  const [total,usuarios] = await Promise.all([
-    Usuario.countDocuments({ estado: true }), 
+  const [total, usuarios] = await Promise.all([
+    Usuario.countDocuments({ estado: true }),
     Usuario.find({ estado: true })
-        .skip(Number(desde))
-        .limit(Number(limite))]);
-  res.json({ 
+      .skip(Number(desde))
+      .limit(Number(limite))]);
+  res.json({
     total,
     usuarios
   });
@@ -38,10 +38,16 @@ const usuariosPut = async (req = required, res = response) => {
     id,
   });
 };
-const usuariosDelete = (req, res = response) => {
+const usuariosDelete = async (req, res = response) => {
+  const { id } = req.params;
+  const uid = req.uid;
+  const usuario = await Usuario.findByIdAndUpdate(id, { estado: false });
   res.json({
     msg: "delete API",
+    usuario,
+    uid
   });
+
 };
 
 module.exports = {
