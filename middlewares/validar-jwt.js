@@ -1,6 +1,5 @@
 const { response, request } = require('express');
 const jwt = require('jsonwebtoken');
-const usuario = require('../models/usuario');
 const Usuario = require('../models/usuario');
 
 const validarJWT = async (req = request, res = response, next) => {
@@ -48,8 +47,22 @@ const validarRolUsuario = async (req, res, next) => {
     }
     next();
 }
+const validarVariosRoles = (...roles) => {
+
+    return (req,res,next) => {
+        if (roles.includes(req.usuario.rol)){
+            next();
+        }else{
+            res.status(401).json({
+                mssg: `Usuario ${req.usuario.nombre} no tiene ningun permiso para borrar`
+            })
+        }
+    }
+
+}
 
 module.exports = {
     validarJWT,
-    validarRolUsuario
+    validarRolUsuario,
+    validarVariosRoles
 }
