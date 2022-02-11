@@ -8,9 +8,10 @@ const { response, request } = require("express");
 
 const { subirArchivo } = require("../helpers/uploads-validators");
 const { Usuario, Producto } = require('../models');
-
+const { obtenerDataFile } = require('../helpers/factura-leer');
+const Factura = require('../models/factura');
+const { armarObjetoFactura, verificarProductos } = require('../helpers/data-helpers');
 const pathNoImage = path.join(__dirname, '../img/no-image.jpg');
-
 
 const cargarArchivo = async (req = request, res = response) => {
 
@@ -197,11 +198,85 @@ const mostrarImagenCloudinary = async (req, res = response) => {
 
 }
 
+const guardarInfoFactura = async (file, uid) => {
+    const resp = await obtenerDataFile(file.tempFilePath);
+    if (!resp.ok) {
+        return {
+            ok: false,
+            content: file.name,
+            msg: 'Error al leer el archivo'
+        }
+    }
+    if (!resp?.factura?.factura?.autorizacion?.numeroAutorizacion) {
+        console.log(resp);
+        return {
+            ok: false,
+            content: file.name,
+            msg: 'Formato no compatible',
+        }
+    }
+    const existeFactura = await Factura.findOne({ numeroAutorizacion: resp.factura.factura.autorizacion.numeroAutorizacion })
+    if (existeFactura) {
+        return {
+            ok: false,
+            content: resp.factura.factura.autorizacion.numeroAutorizacion,
+            msg: 'La factura ya se encuentra registrada'
+        }
+    }
+    const { facturaMongo, ok, msg } = await armarObjetoFactura(resp.factura.factura);
+
+    if (!ok) {
+        return {
+            ok: false,
+            content: file.name,
+            msg
+        }
+    }
+    facturaMongo.usuario = uid;
+    const factura = new Factura(facturaMongo);
+    await factura.save();
+    verificarProductos((facturaMongo.detalles.length)
+        ? facturaMongo.detalles :
+        [facturaMongo.detalles],
+        facturaMongo.establecimiento,
+        facturaMongo.sucursal,
+        facturaMongo.fechaEmision,
+        factura?._id)
+
+    return factura;
+}
+
+const leerFacturas = async (req = request, res = response) => {
+    const { uid } = req;
+    const facturasSubidas = []
+    if (req?.files?.factura?.length) {
+        for (const file of req?.files?.factura) {
+            let factura = await guardarInfoFactura(file, uid);
+            factura = await Factura.findById(factura._id).populate('usuario', ['nombre', 'correo', '_id'])
+                .populate('establecimiento', ['razonSocial', 'ruc'])
+                .populate('sucursal', ['direccion', 'numEstab'])
+            facturasSubidas.push(factura);
+        }
+    } else {
+        let factura = await guardarInfoFactura(req?.files?.factura, uid);
+        factura = await Factura.findById(factura._id).populate('usuario', ['nombre', 'correo', '_id'])
+            .populate('establecimiento', ['razonSocial', 'ruc'])
+            .ppopulate('sucursal', ['direccion', 'numEstab'])
+        facturasSubidas.push(factura);
+    }
+    res.json({
+        ok: true,
+        content: facturasSubidas
+    })
+
+}
+
 module.exports = {
     cargarArchivo,
     actualizarImagen,
     actualizarImagenCloudinary,
     mostrarImagen,
-    mostrarImagenCloudinary
+    mostrarImagenCloudinary,
+    leerFacturas
 }
 

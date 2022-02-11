@@ -9,26 +9,34 @@ const login = async (req, res = response) => {
     try {
         const usuario = await Usuario.findOne({ correo });
         if (!usuario) {
-            return res.status(400).json({
-                msg: 'Usuario / Password no son correctos',
+            return res.status(200).json({
+                ok: false,
+                msg: 'Las credenciales no son correctas',
             });
         }
         if (!usuario.estado) {
-            return res.status(400).json({
-                msg: 'Usuario / Password no son correctos - estado: false'
+            return res.status(200).json({
+                ok: false,
+                msg: 'El usuario se encuentra bloqueado'
             });
         }
         const validPassword = bcryptjs.compareSync(password, usuario.password);
         if (!validPassword) {
-            return res.status(400).json({
-                msg: 'Usuario / Password no son correctos - Password'
+            return res.status(200).json({
+                ok: false,
+                msg: 'Las Credenciales no son correctas'
             });
         }
         const token = await generarJWT(usuario.id);
 
         res.json({
-            msg: 'Login',
-            token
+            ok: true,
+            msg: '',
+            token,
+            user: {
+                nombre: usuario.nombre,
+                uid: usuario.id
+            }
         })
 
     } catch (err) {
@@ -78,7 +86,20 @@ const googleLogin = async (req, res) => {
 
 }
 
+const validarToken = async (req, res = response) => {
+    const { usuario } = req;
+    const token = await generarJWT(usuario.id);
+    res.json({
+        ok: true,
+        content: {
+            usuario,
+            token
+        }
+    })
+}
+
 module.exports = {
     login,
-    googleLogin
+    googleLogin,
+    validarToken
 }

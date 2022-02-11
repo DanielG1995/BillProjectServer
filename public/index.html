@@ -7,18 +7,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-signin-client_id"
         content="441229563444-1dv4iqo4ktmfdjd9naa4oskq0k20ftoc.apps.googleusercontent.com">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
     <title>GOOGLE login</title>
 </head>
 
-<body>
+<body class=container>
     <h1>Google login</h1>
     <div class="g-signin2" data-onsuccess="onSignIn"></div>
-    <br/>
+    <br />
     <a href="#" onclick="signOut();">Sign out</a>
-
+    <div class="col-sm-6">
+        <h1>Login</h1>
+        <hr>
+        <form class="d-grid">
+            <input type="text" name="correo" class="form-control mb-2" placeholder="correo">
+            <input type="text" name="password" class="form-control mb-2" placeholder="password">
+            <button tyope="submit" class="btn btn-primary">
+                Ingresar
+            </button>
+        </form>
+    </div>
     <script src="https://apis.google.com/js/platform.js" async defer></script>
     <script>
-        var url='http://'+window.location.hostname+":8080/api/auth/google"
+        var url = 'http://' + window.location.hostname + ":8080/api/auth/"
+        const miFormulario = document.querySelector('form');
+        miFormulario.addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const formData = {};
+
+            for (let el of miFormulario.elements) {
+                if (el.name.length > 0) {
+                    formData[el.name] = el.value;
+                }
+            }
+            fetch(url + 'login', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(resp => resp.json())
+                .then(({ msg, token }) => {
+                    if (token) {
+                        localStorage.setItem('token',token)
+                        window.location='chat.html'
+                    } else {
+                        return console.error(msg)
+                    }
+                })
+                .catch(err => console.log)
+        });
+
+
         function onSignIn(googleUser) {
             var id_token = googleUser.getAuthResponse().id_token;
             var profile = googleUser.getBasicProfile();
@@ -26,14 +66,18 @@
             console.log('Name: ' + profile.getName());
             console.log('Image URL: ' + profile.getImageUrl());
             console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
-           var data= { id_token };
-            fetch(url,{
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify(data)
-            }).then(resp=>resp.json())
-            .then(data=>console.log('Nuestro server',data))
-            .catch(console.log)
+            var data = { id_token };
+            fetch(url + 'google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(resp => resp.json())
+                .then(({ token }) => {
+                    localStorage.setItem('token', token);
+                           window.location = 'chat.html'
+                })
+                .catch(console.log)
         }
         function signOut() {
             var auth2 = gapi.auth2.getAuthInstance();
