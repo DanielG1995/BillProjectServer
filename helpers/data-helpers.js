@@ -41,7 +41,7 @@ const armarObjetoFactura = async (facturaXML = {}) => {
     try {
         let sucursal = {};
         const autorizacion = facturaXML.autorizacion;
-        const { comprobante: { factura: { detalles, infoTributaria, infoFactura } } } = autorizacion;
+        const { comprobante: { factura: { detalles='', infoTributaria, infoFactura } } } = autorizacion;
         const fechaEmision = moment(infoFactura.fechaEmision.trim(), 'DD/MM/YYYY ').valueOf();
         // const fechaEmision = Date.parse(infoFactura.fechaEmision.trim());
         let establecimientoBD = await Establecimiento.findOne({ ruc: infoTributaria.ruc })

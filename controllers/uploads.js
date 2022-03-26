@@ -219,7 +219,7 @@ const guardarInfoFactura = async (file, uid) => {
     if (existeFactura) {
         return {
             ok: false,
-            content: resp.factura.factura.autorizacion.numeroAutorizacion,
+            content: file.name,
             msg: 'La factura ya se encuentra registrada'
         }
     }
@@ -252,16 +252,10 @@ const leerFacturas = async (req = request, res = response) => {
     if (req?.files?.factura?.length) {
         for (const file of req?.files?.factura) {
             let factura = await guardarInfoFactura(file, uid);
-            factura = await Factura.findById(factura._id).populate('usuario', ['nombre', 'correo', '_id'])
-                .populate('establecimiento', ['razonSocial', 'ruc'])
-                .populate('sucursal', ['direccion', 'numEstab'])
             facturasSubidas.push(factura);
         }
     } else {
         let factura = await guardarInfoFactura(req?.files?.factura, uid);
-        factura = await Factura.findById(factura._id).populate('usuario', ['nombre', 'correo', '_id'])
-            .populate('establecimiento', ['razonSocial', 'ruc'])
-            .ppopulate('sucursal', ['direccion', 'numEstab'])
         facturasSubidas.push(factura);
     }
     res.json({

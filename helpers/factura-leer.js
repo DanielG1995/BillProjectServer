@@ -26,7 +26,7 @@ const leerDataXML = (xmlData = '') => {
     try {
         if (parser.validate(xmlData) === true) {
             let jsonObj = parser.parse(xmlData, options);
-            if (parser.validate(jsonObj?.autorizacion?.comprobante?.cdata || '') === true) {
+            if (parser.validate(jsonObj?.autorizacion?.comprobante?.cdata?.trim() || '') === true) {
                 const cdataJson = parser.parse(jsonObj?.autorizacion?.comprobante?.cdata, options);
                 delete jsonObj.autorizacion.comprobante.cdata
                 delete cdataJson.factura['ds:Signature']
