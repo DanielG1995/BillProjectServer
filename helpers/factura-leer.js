@@ -26,11 +26,23 @@ const leerDataXML = (xmlData = '') => {
     try {
         if (parser.validate(xmlData) === true) {
             let jsonObj = parser.parse(xmlData, options);
+            //Validacion de facturas validadas en el SRI
             if (parser.validate(jsonObj?.autorizacion?.comprobante?.cdata?.trim() || '') === true) {
                 const cdataJson = parser.parse(jsonObj?.autorizacion?.comprobante?.cdata, options);
-                delete jsonObj.autorizacion.comprobante.cdata
-                delete cdataJson.factura['ds:Signature']
-                jsonObj.autorizacion.comprobante = cdataJson
+                delete jsonObj.autorizacion.comprobante.cdata;
+                delete cdataJson.factura['ds:Signature'];
+                jsonObj.autorizacion.comprobante = cdataJson;
+            }
+            //Validacion para facturas que aun no han sido registradas en el SRI
+            if (!jsonObj?.autorizacion) {
+                delete jsonObj?.factura['ds:Signature'];
+                jsonObj = {
+                    ...jsonObj.factura,
+                    autorizacion: {
+                        comprobante: { factura: { ...jsonObj.factura } },
+                        numeroAutorizacion: jsonObj?.factura?.infoTributaria?.claveAcceso
+                    }
+                };
             }
             return { ok: true, factura: jsonObj }
         } else {

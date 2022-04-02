@@ -199,7 +199,7 @@ const mostrarImagenCloudinary = async (req, res = response) => {
 }
 
 const guardarInfoFactura = async (file, uid) => {
-    const resp = await obtenerDataFile(file.tempFilePath);
+    const resp = await obtenerDataFile(file?.tempFilePath);
     if (!resp.ok) {
         return {
             ok: false,
@@ -207,15 +207,16 @@ const guardarInfoFactura = async (file, uid) => {
             msg: 'Error al leer el archivo'
         }
     }
-    if (!resp?.factura?.factura?.autorizacion?.numeroAutorizacion) {
+    if (!resp?.factura?.factura?.autorizacion?.comprobante?.factura?.detalles) {
         console.log(resp);
         return {
             ok: false,
             content: file.name,
             msg: 'Formato no compatible',
+            factura: resp
         }
     }
-    const existeFactura = await Factura.findOne({ numeroAutorizacion: resp.factura.factura.autorizacion.numeroAutorizacion })
+    const existeFactura = await Factura.findOne({ numeroAutorizacion: resp?.factura?.factura?.autorizacion?.numeroAutorizacion })
     if (existeFactura) {
         return {
             ok: false,
@@ -224,8 +225,7 @@ const guardarInfoFactura = async (file, uid) => {
         }
     }
     const { facturaMongo, ok, msg } = await armarObjetoFactura(resp.factura.factura);
-
-    if (!ok) {
+     if (!ok) {
         return {
             ok: false,
             content: file.name,

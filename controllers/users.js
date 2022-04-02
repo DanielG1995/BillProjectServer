@@ -35,6 +35,7 @@ const usuariosPut = async (req = required, res = response) => {
   const usuario = await Usuario.findByIdAndUpdate(id, resto);
   res.json({
     msg: "put API-controller",
+    usuario,
     id,
   });
 };

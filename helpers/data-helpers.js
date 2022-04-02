@@ -61,6 +61,7 @@ const armarObjetoFactura = async (facturaXML = {}) => {
                 const { _id } = await crearSucursal(establecimientoBD._id, infoFactura.dirEstablecimiento, infoTributaria.estab);
                 sucursal._id = _id;
             }
+
         }
         return {
             facturaMongo: {
