@@ -1,7 +1,7 @@
 const { check } = require("express-validator");
 const { validarJWT, validarCampos } = require("../middlewares/");
 const { Router } = require("express");
-const { obtenerFacturasPorUsuario, obtenerSucursales, obtenerEstablecimientos } = require("../controllers/Facturas");
+const { obtenerFacturasPorUsuario, obtenerSucursales, obtenerEstablecimientos, obtenerDatosGeneralesPorUsuario } = require("../controllers/Facturas");
 //const { validarIdFactura } = require("../helpers/db-validators");
 
 const router = Router();
@@ -21,6 +21,12 @@ router.get("/estab", [
     validarJWT,
     validarCampos
 ], obtenerEstablecimientos);
+
+router.get("/datosGenerales", [
+    validarJWT,
+    validarCampos,
+    check('usuarioId').optional().isMongoId(),
+], obtenerDatosGeneralesPorUsuario);
 
 /* router.get("/:id", [
     validarJWT,

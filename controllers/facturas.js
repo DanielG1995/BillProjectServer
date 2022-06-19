@@ -1,5 +1,6 @@
+var mongoose = require('mongoose');
 const { response, request } = require('express');
-const { Factura, Establecimiento, Sucursal } = require('../models');
+const { Factura, Establecimiento, Sucursal, Producto } = require('../models');
 
 const obtenerFacturasPorUsuario = async (req = request, res = response) => {
     const { limit = 10 } = req.query;
@@ -31,7 +32,7 @@ const obtenerSucursales = async (req = request, res = response) => {
     res.json({
         ok: true,
         content: {
-            total:sucursales.length,
+            total: sucursales.length,
             sucursales
         }
     })
@@ -39,7 +40,7 @@ const obtenerSucursales = async (req = request, res = response) => {
 
 const obtenerEstablecimientos = async (req = request, res = response) => {
     const [total, establecimientos] = await Promise.all([
-        Establecimiento.countDocuments(),
+        Factura.countDocuments(),
         Establecimiento.find()
     ]);
     res.json({
@@ -51,10 +52,140 @@ const obtenerEstablecimientos = async (req = request, res = response) => {
     })
 }
 
+const obtenerDatosGeneralesPorUsuario = async (req = request, res = response) => {
+    let establecimiento
+    const [total, establecimientos, producto] = await Promise.all([
+        Factura.countDocuments({ usuario: req.uid }),
+        Factura.aggregate(
+            [
+                {
+                    "$match": {
+                        "usuario": mongoose.Types.ObjectId(req.uid)
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": {
+                            "establecimiento": "$establecimiento"
+                        },
+                        "COUNT(establecimiento)": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$project": {
+                        "establecimiento": "$_id.establecimiento",
+                        "total": { $max: "$COUNT(establecimiento)" },
+                        "_id": 0
+                    }
+                }
+            ]
+        ),
+        Producto.aggregate(
+            [
+                {
+                    "$project": {
+                        "_id": 0,
+                        "productos": "$$ROOT"
+                    }
+                },
+                {
+                    "$lookup": {
+                        "localField": "productos.non_existing_field",
+                        "from": "precios",
+                        "foreignField": "non_existing_field",
+                        "as": "precios"
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$precios",
+                        "preserveNullAndEmptyArrays": false
+                    }
+                },
+                {
+                    "$lookup": {
+                        "localField": "productos.non_existing_field",
+                        "from": "facturas",
+                        "foreignField": "non_existing_field",
+                        "as": "facturas"
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$facturas",
+                        "preserveNullAndEmptyArrays": false
+                    }
+                },
+                {
+                    "$match": {
+                        "$and": [
+                            {
+                                "$expr": {
+                                    "$eq": [
+                                        "$precios.codigoPrincipal",
+                                        "$productos.codigoPrincipal"
+                                    ]
+                                }
+                            },
+                            {
+                                "$expr": {
+                                    "$eq": [
+                                        "$facturas._id",
+                                        "$precios.factura"
+                                    ]
+                                }
+                            },
+                            {
+                                "$expr": {
+                                    "$eq": [
+                                        "$facturas.usuario",
+                                        mongoose.Types.ObjectId(req.uid)
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "$sort": {
+                        "productos.total": -1
+                    }
+                },
+                {
+                    "$project": {
+                        "productos.descripcion": "$productos.descripcion",
+                        "productos.total": "$productos.total",
+                        "_id": 0
+                    }
+                },
+                {
+                    "$limit": 1
+                }
+            ])
+    ]);
+
+    if (establecimientos.length > 0) {
+        establecimiento = await Establecimiento.findById(establecimientos.sort((a, b) => {
+            return Number.parseInt(b.total) - Number.parseInt(a.total)
+        })[0]?.establecimiento)
+    }
+    res.json({
+        ok: true,
+        content: {
+            total,
+            establecimiento,
+            producto: {...producto?.[0]?.productos}
+        }
+    })
+}
+
 
 
 module.exports = {
     obtenerFacturasPorUsuario,
     obtenerSucursales,
-    obtenerEstablecimientos
+    obtenerEstablecimientos,
+    obtenerDatosGeneralesPorUsuario
 }

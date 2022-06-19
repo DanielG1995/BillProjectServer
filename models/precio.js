@@ -21,6 +21,7 @@ const PrecioSchema = Schema({
     },
     fechaRegistro: { type: Date },
     precioUnitario: { type: Number },
+    codigoPrincipal: { type: String },
     iva: { type: Number }
 });
 

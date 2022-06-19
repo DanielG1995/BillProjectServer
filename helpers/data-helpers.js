@@ -18,6 +18,7 @@ const verificarProductos = async (productos = [], establecimiento, sucursal, fec
             establecimiento,
             sucursal,
             producto: prodBD._id,
+            codigoPrincipal:prodBD?.codigoPrincipal,
             precioUnitario: producto.precioUnitario,
         }
         let precio = await Precio.findOne(dataPrecio)
@@ -53,7 +54,7 @@ const armarObjetoFactura = async (facturaXML = {}) => {
             })
             const { _id } = await estab.save();
             establecimientoBD = { id: _id }
-            sucursal = crearSucursal(_id, infoFactura.dirEstablecimiento, infoTributaria.estab)
+            sucursal = await crearSucursal(_id, infoFactura.dirEstablecimiento, infoTributaria.estab)
         } else {
             sucursal = await Sucursal.findOne({ establecimiento: establecimientoBD._id, numEstab: infoTributaria.estab })
             if (!sucursal) { //Existe Sucursal
@@ -63,6 +64,7 @@ const armarObjetoFactura = async (facturaXML = {}) => {
             }
 
         }
+        console.log(sucursal);
         return {
             facturaMongo: {
                 numeroAutorizacion: autorizacion.numeroAutorizacion,
@@ -88,13 +90,13 @@ const armarObjetoFactura = async (facturaXML = {}) => {
 
 }
 
-const crearSucursal = async (establecimiento, direccion, numEstab) => {
+const crearSucursal = (establecimiento, direccion, numEstab) => {
     const sucursal = new Sucursal({
         establecimiento,
         direccion,
         numEstab
     });
-    return await sucursal.save();
+    return sucursal.save();
 }
 
 module.exports = {

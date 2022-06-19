@@ -26,14 +26,14 @@ router.post("/", [
   check('correo').custom(emailExiste),
   check('nombre', 'Es obligatorio').not().isEmpty(),
   check('password', 'Es obligatorio, mas de 6 letras').isLength({ min: 6 }),
-  check('rol').custom(esRolValido),
+ // check('rol').custom(esRolValido),
   validarCampos
 ], usuariosPost);
 router.delete("/:id", [
   validarJWT,
  // validarRolUsuario,
-  validarVariosRoles('ADMIN_ROLE','VENTAS_ROLE','USER_ROLE'),
-  check('id', 'No es un id vàlido').isMongoId(),
+  //validarVariosRoles('ADMIN_ROLE','VENTAS_ROLE','USER_ROLE'),
+  check('id', 'No es un id válido').isMongoId(),
   check('id').custom(existeUsuarioId),
   validarCampos
 ], usuariosDelete);
