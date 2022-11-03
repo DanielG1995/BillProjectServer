@@ -1,7 +1,7 @@
 const { check } = require("express-validator");
 const { validarJWT, validarCampos } = require("../middlewares/");
 const { Router } = require("express");
-const { obtenerFacturasPorUsuario, obtenerSucursales, obtenerEstablecimientos, obtenerDatosGeneralesPorUsuario } = require("../controllers/Facturas");
+const { obtenerFacturasPorUsuario, obtenerSucursales, obtenerEstablecimientos, obtenerDatosGeneralesPorUsuario } = require("../controllers/facturas");
 //const { validarIdFactura } = require("../helpers/db-validators");
 
 const router = Router();
