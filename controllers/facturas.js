@@ -54,7 +54,7 @@ const obtenerEstablecimientos = async (req = request, res = response) => {
 
 const obtenerDatosGeneralesPorUsuario = async (req = request, res = response) => {
     let establecimiento
-    const [total, establecimientos, producto] = await Promise.all([
+    const [total, establecimientos, producto, totalGastado, yearMonth, year] = await Promise.all([
         Factura.countDocuments({ usuario: req.uid }),
         Factura.aggregate(
             [
@@ -163,7 +163,85 @@ const obtenerDatosGeneralesPorUsuario = async (req = request, res = response) =>
                 {
                     "$limit": 1
                 }
-            ])
+            ]),
+        Factura.aggregate([
+            {
+                "$match": {
+                    "usuario": mongoose.Types.ObjectId(req.uid)
+                }
+            },
+            {
+                "$group": {
+                    "_id": {
+
+                    },
+                    "SUM(importeTotal)": {
+                        "$sum": "$importeTotal"
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "gastoTotal": "$SUM(importeTotal)",
+                    "_id": 0
+                }
+            }
+        ]),
+        Factura.aggregate([
+            {
+                "$match": {
+                    "usuario": mongoose.Types.ObjectId(req.uid)
+                }
+            }
+            , {
+                "$group": {
+                    "_id": {
+                        "mes": { "$month": "$fechaEmision" },
+                        "year": { "$year": "$fechaEmision" },
+                    },
+                    "SUM(importeTotal)": {
+                        "$sum": "$importeTotal"
+                    },
+                    "ByYearAndMonth": { "$sum": 1 }
+
+                }
+            }, {
+                $project: {
+                    "month": "$_id.mes",
+                    "year": "$_id.year",
+                    "total": "$ByYearAndMonth",
+                    "totalPrice": "$SUM(importeTotal)",
+                    "_id": 0
+                }
+            }
+        ]),
+        Factura.aggregate([
+            {
+                "$match": {
+                    "usuario": mongoose.Types.ObjectId(req.uid)
+                }
+            }
+            , {
+                "$group": {
+                    "_id": {
+                        "year": { "$year": "$fechaEmision" }
+                    },
+                    "byYear": { "$sum": 1 },
+                    "SUM(importeTotal)": {
+                        "$sum": "$importeTotal"
+                    },
+
+                }
+            }, {
+                $project: {
+                    "year": "$_id.year",
+                    "total": "$byYear",
+                    "totalPrice": "$SUM(importeTotal)",
+                    "_id": 0
+                }
+            }
+        ])
+
     ]);
 
     if (establecimientos.length > 0) {
@@ -176,7 +254,11 @@ const obtenerDatosGeneralesPorUsuario = async (req = request, res = response) =>
         content: {
             total,
             establecimiento,
-            producto: {...producto?.[0]?.productos}
+            producto: { ...producto?.[0]?.productos },
+            totalGastado: { ...totalGastado?.[0] },
+            yearMonth,
+            year
+
         }
     })
 }

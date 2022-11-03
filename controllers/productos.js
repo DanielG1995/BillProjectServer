@@ -1,4 +1,4 @@
-const { Producto } = require("../models");
+const { Producto, Precio } = require("../models");
 
 
 const obtenerProductos = async (req = request, res = response) => {
@@ -15,13 +15,25 @@ const obtenerProductos = async (req = request, res = response) => {
 
     })
 }
-const obtenerProducto = async (req = request, res = response) => {
-    const { id } = req.params;
-    const producto = await Producto.findOne({ _id: id })
-        .populate('usuario', ['nombre', 'correo', '_id'])
-        .populate('categoria', 'nombre');
+
+const obtenerProductosPrecios = async (req = request, res = response) => {
+    //const { isset = 0 } = req.query;
+    const precios = await Precio.find({}).populate('producto', ['descripcion', 'total']).populate('establecimiento', ['razonSocial'])
+
     return res.json({
-        producto
+        ok: true,
+        precios
+    })
+}
+
+const obtenerProductoPrecios = async (req = request, res = response) => {
+    const { id } = req.params;
+    const precios = await Precio.find({ codigoPrincipal: id })
+        .populate('establecimiento', ['razonSocial'])
+        .populate('sucursal', 'direccion');
+    return res.json({
+        precios,
+        ok: true
     })
 }
 const crearProducto = async (req, res = response) => {
@@ -54,11 +66,11 @@ const crearProducto = async (req, res = response) => {
 const actualizarProducto = async (req = request, res = response) => {
     const { id } = req.params;
     const { nombre, ...rest } = req.body;
-    if(nombre){
-        rest.nombre=nombre.toUpperCase();
+    if (nombre) {
+        rest.nombre = nombre.toUpperCase();
     }
     rest.usuario = req.usuario._id;
-    const { _id: idProducto } = await Producto.findByIdAndUpdate(id, {...rest});
+    const { _id: idProducto } = await Producto.findByIdAndUpdate(id, { ...rest });
     const producto = await Producto.findById(idProducto);
     res.json({
         producto
@@ -76,6 +88,7 @@ const actualizarProducto = async (req = request, res = response) => {
 module.exports = {
     crearProducto,
     obtenerProductos,
-    obtenerProducto,
-    actualizarProducto
+    obtenerProductoPrecios,
+    actualizarProducto,
+    obtenerProductosPrecios
 }

@@ -54,10 +54,10 @@ const existeCategoriaProducto = async (id) => {
 
 };
 
-const validarIdProducto = async (_id) => {
-  const producto = await Producto.findById({ _id });
+const validarIdProducto = async (codigo) => {
+  const producto = await Producto.findOne({ codigoPrincipal: codigo });
   if (!producto) {
-    throw new Error('Id de Producto no valido');
+    throw new Error('No existe producto con el Id');
   }
 
 };
@@ -65,7 +65,7 @@ const validarIdProducto = async (_id) => {
 const validarColeccionesPermitidas = (coleccion = '', colecciones = []) => {
 
   const incluida = colecciones.includes(coleccion);
-  if(!incluida) {
+  if (!incluida) {
     throw new Error(`La coleccion ${coleccion} no es permitida`);
   }
 
